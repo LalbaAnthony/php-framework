@@ -13,19 +13,27 @@ class Router
         $this->routes = $routes;
     }
 
+    private function response($status, $data)
+    {
+        http_response_code($status);
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
+
     public function dispatch()
     {
         $uri = $this->request->uri;
         $method = $this->request->method;
 
         if (!isset($this->routes[$uri])) {
-            $this->sendResponse(404, ['error' => 'Route non trouvée']);
+            $this->response(404, ['error' => 'Route non trouvée']);
         }
 
         $route = $this->routes[$uri];
 
         if (!isset($route[$method])) {
-            $this->sendResponse(405, ['error' => 'Méthode non autorisée']);
+            $this->response(405, ['error' => 'Méthode non autorisée']);
         }
 
         list($controllerName, $action) = explode('@', $route[$method]);
@@ -33,23 +41,15 @@ class Router
         $controllerClass = 'App\\Controller\\' . $controllerName;
 
         if (!class_exists($controllerClass)) {
-            $this->sendResponse(500, ['error' => "Le contrôleur {$controllerName} n'existe pas"]);
+            $this->response(500, ['error' => "Le contrôleur {$controllerName} n'existe pas"]);
         }
 
         $controller = new $controllerClass();
 
         if (!method_exists($controller, $action)) {
-            $this->sendResponse(500, ['error' => "La méthode {$action} n'existe pas dans le contrôleur {$controllerName}"]);
+            $this->response(500, ['error' => "La méthode {$action} n'existe pas dans le contrôleur {$controllerName}"]);
         }
 
         call_user_func([$controller, $action], $this->request);
-    }
-
-    private function sendResponse($status, $data)
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
     }
 }
