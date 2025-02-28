@@ -19,7 +19,7 @@ class Request
         $this->params = $_GET;
     }
 
-    public function getJson()
+    public function getJson(): mixed
     {
         return json_decode($this->body, true);
     }
